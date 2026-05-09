@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Implementation — Respra</title>
+  <link rel="stylesheet" href="shared.css" />
+  <style>
+    /* ── HERO ── */
+    .impl-hero {
+      min-height: 100vh;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding-bottom: 100px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .impl-hero-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 70% 80% at 90% 10%, rgba(200,232,237,0.8) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 60% at 0% 100%, rgba(12,98,114,0.06) 0%, transparent 55%);
+      pointer-events: none;
+      will-change: transform;
+    }
+
+    /* ── DEPLOYMENT CONTEXTS ── */
+    .deploy-section {
+      background: #fff;
+    }
+
+    .deploy-tabs {
+      display: flex;
+      gap: 0;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-top: 56px;
+      margin-bottom: 48px;
+    }
+
+    .deploy-tab {
+      flex: 1;
+      padding: 20px 28px;
+      font-family: var(--body);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--muted);
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      border-right: 1px solid var(--border);
+      transition: background 0.2s, color 0.2s;
+      text-align: left;
+    }
+
+    .deploy-tab:last-child { border-right: none; }
+    .deploy-tab:hover { background: var(--bg); color: var(--ink); }
+    .deploy-tab.active { background: var(--green-dark); color: #fff; }
+
+    .deploy-panel {
+      display: none;
+      grid-template-columns: 1fr 1fr;
+      gap: 56px;
+      align-items: start;
+      animation: panelFade 0.4s ease;
+    }
+
+    .deploy-panel.active { display: grid; }
+
+    @keyframes panelFade {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .deploy-panel-text h3 { margin-bottom: 16px; }
+    .deploy-panel-text .lead { font-size: 17px; margin-bottom: 24px; }
+
+    .deploy-feature {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .deploy-feature:last-child { border-bottom: none; }
+
+    .deploy-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      margin-top: 6px;
+      flex-shrink: 0;
+    }
+
+    .deploy-feature-text h4 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+
+    .deploy-feature-text p {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+      font-weight: 300;
+    }
+
+    .deploy-visual {
+      background: var(--bg2);
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      padding: 48px 40px;
+      min-height: 320px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .deploy-visual-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--green);
+      margin-bottom: 24px;
+    }
+
+    .deploy-stat-row {
+      display: flex;
+      gap: 32px;
+    }
+
+    /* ── TIMELINE ── */
+    .timeline-section {
+      background: var(--bg);
+    }
+
+    .timeline {
+      margin-top: 64px;
+      position: relative;
+      padding-left: 40px;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 8px;
+      bottom: 8px;
+      width: 2px;
+      background: var(--border-mid);
+    }
+
+    .tl-item {
+      position: relative;
+      padding-bottom: 56px;
+    }
+
+    .tl-item:last-child { padding-bottom: 0; }
+
+    .tl-dot {
+      position: absolute;
+      left: -46px;
+      top: 6px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--green);
+      border: 3px solid var(--bg);
+      box-shadow: 0 0 0 2px var(--green);
+    }
+
+    .tl-phase {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--green);
+      margin-bottom: 8px;
+    }
+
+    .tl-item h4 {
+      font-family: var(--subhead);
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 10px;
+      letter-spacing: -0.3px;
+    }
+
+    .tl-item p {
+      font-size: 15px;
+      color: var(--muted);
+      line-height: 1.7;
+      font-weight: 300;
+      max-width: 580px;
+    }
+
+    .tl-date {
+      display: inline-block;
+      margin-top: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--green-dark);
+      background: var(--mint);
+      padding: 4px 14px;
+      border-radius: 100px;
+    }
+
+    /* ── ECONOMICS ── */
+    .econ-section {
+      background: var(--mint);
+    }
+
+    .econ-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+
+    .econ-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .econ-stat {
+      background: #fff;
+      border-radius: 16px;
+      padding: 32px 28px;
+      border: 1px solid rgba(12,98,114,0.15);
+    }
+
+    .impl-hero h1 { font-size: clamp(50px, 5.6vw, 86px); }
+
+    @media (max-width: 900px) {
+      .deploy-tabs { flex-direction: column; }
+      .deploy-panel.active { grid-template-columns: 1fr; }
+      .int-grid { grid-template-columns: 1fr; }
+      .econ-grid { grid-template-columns: 1fr; }
+      .econ-stats { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">
+    <span class="nav-wordmark">respra</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="about.html">About</a></li>
+    <li><a href="technology.html">Technology</a></li>
+    <li><a href="implementation.html" class="active">Implementation</a></li>
+    <li><a href="manifesto.html">Manifesto</a></li>
+  </ul>
+  <div class="nav-right">
+    <div class="nav-contact-wrap">
+      <button class="nav-contact-btn" id="contact-btn">Contact Us</button>
+      <div class="nav-contact-popup" id="contact-popup">
+        <a href="mailto:contact@respra.ca">contact@respra.ca</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="page-wrap">
+
+  <!-- HERO -->
+  <section class="impl-hero">
+    <div class="impl-hero-bg" id="impl-hero-bg"></div>
+    <div class="section-inner" style="position:relative;z-index:2;">
+      <span class="eyebrow fade-up">Implementation</span>
+      <h1 class="fade-up" style="transition-delay:.08s;max-width:760px;">Deployed where<br/>patients <em>are.</em></h1>
+      <p class="lead fade-up" style="transition-delay:.18s;max-width:580px;">Respra is designed for real-world health systems. From tertiary hospitals to rural clinics to home monitoring, Respra works in every context.</p>
+    </div>
+  </section>
+
+  <!-- DEPLOYMENT CONTEXTS -->
+  <section class="deploy-section">
+    <div class="section-inner">
+      <span class="eyebrow fade-up">Deployment Contexts</span>
+      <h2 class="fade-up" style="transition-delay:.08s;">Where Respra works</h2>
+
+      <div class="deploy-tabs fade-up" style="transition-delay:.14s;">
+        <button class="deploy-tab active" data-tab="clinical">Clinical Settings</button>
+        <button class="deploy-tab" data-tab="primary">Primary Care</button>
+        <button class="deploy-tab" data-tab="home">Home Monitoring</button>
+        <button class="deploy-tab" data-tab="screening">Mass Screening</button>
+      </div>
+
+      <!-- Clinical -->
+      <div class="deploy-panel active" id="tab-clinical">
+        <div class="deploy-panel-text">
+          <h3>Tertiary &amp; Secondary Hospitals</h3>
+          <p class="lead">Respra integrates with existing clinical workflows to add fast, non-invasive multi-disease screening at triage, pre-admission, and follow-up stages.</p>
+          <div class="deploy-feature">
+            <div class="deploy-dot"></div>
+            <div class="deploy-feature-text">
+              <h4>EHR Integration</h4>
+              <p>Results export directly to major EHR platforms via HL7 FHIR, embedding into existing patient records without extra workflow steps.</p>
+            </div>
+          </div>
+          <div class="deploy-feature">
+            <div class="deploy-dot"></div>
+            <div class="deploy-feature-text">
+              <h4>Multi-patient throughput</h4>
+              <p>Sub-90-second total cycle time per patient — cartridge swap to result — enabling rapid sequential testing in busy emergency or outpatient departments.</p>
+            </div>
+          </div>
+          <div class="deploy-feature">
+            <div class="deploy-dot"></div>
+            <div class="deploy-feature-text">
+              <h4>Audit trail &amp; compliance</h4>
+              <p>Full HIPAA/GDPR-compliant audit logging. Every test is timestamped, operator-identified, and secured with end-to-end encryption.</p>
+            </div>
+          </div>
+        </div>
+        <div class="deploy-visual">
+          <div class="deploy-visual-label">Clinical Performance</div>
+          <div class="deploy-stat-row">
+            <div>
+              <div class="stat-num" style="font-size:48px;">&lt;90s</div>
+              <div class="stat-label">Full cycle time</div>
+            </div>
+            <div>
+              <div class="stat-num" style="font-size:48px;">HL7</div>
+              <div class="stat-label">FHIR integration</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Primary -->
+      <div class="deploy-panel" id="tab-primary">
+        <div class="deploy-panel-text">
+          <h3>Primary Care &amp; GP Clinics</h3>
+          <p class="lead">Respra gives GPs an affordable, rapid screening tool that flags patients who need specialist referral — reducing missed diagnoses and unnecessary imaging.</p>
+          <div class="deploy-feature">
+            <div class="deploy-dot"></div>
+            <div class="deploy-feature-text">
+              <h4>No-training deployment</h4>
+              <p>The device requires no specialist training. Any clinical staff member can administer a test within a 5-minute onboarding walkthrough.</p>
+            </div>
+          </div>
+          <div class="deploy-feature">
+            <div class="deploy-dot"></div>
+            <div class="deploy-feature-text">
+              <h4>Referral decision support</h4>
+              <p>Risk stratification output is designed to support — not replace — GP clinical judgment, with clear confidence bands and recommended next steps.</p>
+            </div>
+          </div>
+          <div class="deploy-feature">
+            <div class="deploy-dot"></div>
+            <div class="deploy-feature-text">
+              <h4>Low per-test cost</h4>
+              <p>Single-use cartridge model keeps per-test cost competitive with standard blood panels, enabling routine use rather than specialist referral only.</p>
+            </div>
+          </div>
+        </div>
+        <div class="deploy-visual">
+          <div class="deploy-visual-label">Primary Care Fit</div>
+          <div class="deploy-stat-row">
+            <div>
+              <div class="stat-num" style="font-size:48px;">5 min</div>
+              <div class="stat-label">Staff onboarding</div>
+            </div>
+            <div>
+              <div class="stat-num" style="font-size:48px;">Low</div>
+              <div class="stat-label">Per-test cost target</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Home -->
+      <div class="deploy-panel" id="tab-home">
+        <div class="deploy-panel-text">
+          <h3>Home &amp; Remote Monitoring</h3>
+          <p class="lead">For chronic disease monitoring and longitudinal health tracking, Respra's consumer-grade variant enables patients to test from home and share results with their care team.</p>
+          <div class="deploy-feature">
+            <div class="deploy-dot"></div>
+            <div class="deploy-feature-text">
+              <h4>Companion app</h4>
+              <p>Mobile app for iOS and Android guides the patient through testing, stores historical results, and pushes trend alerts to connected clinicians.</p>
+            </div>
+          </div>
+          <div class="deploy-feature">
+            <div class="deploy-dot"></div>
+            <div class="deploy-feature-text">
+              <h4>Trend &amp; trajectory analysis</h4>
+              <p>Longitudinal VOC tracking reveals disease progression or treatment response over time — far richer than one-time snapshots.</p>
+            </div>
+          </div>
+          <div class="deploy-feature">
+            <div class="deploy-dot"></div>
+            <div class="deploy-feature-text">
+              <h4>Privacy-first architecture</h4>
+              <p>On-device computation for primary analysis. Cloud sync optional and fully consent-gated, with granular data sharing controls.</p>
+            </div>
+          </div>
+        </div>
+        <div class="deploy-visual">
+          <div class="deploy-visual-label">Home Use Specs</div>
+          <div class="deploy-stat-row">
+            <div>
+              <div class="stat-num" style="font-size:48px;">iOS/Android</div>
+              <div class="stat-label">Companion app</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Screening -->
+      <div class="deploy-panel" id="tab-screening">
+        <div class="deploy-panel-text">
+          <h3>Population &amp; Mass Screening</h3>
+          <p class="lead">Respra's throughput, low cost, and zero-specialist-required design make it uniquely suited to large-scale national screening programs and workplace health initiatives.</p>
+          <div class="deploy-feature">
+            <div class="deploy-dot"></div>
+            <div class="deploy-feature-text">
+              <h4>Mobile screening units</h4>
+              <p>Compact form factor enables deployment in community centres, schools, workplaces, and mobile health vans without infrastructure requirements.</p>
+            </div>
+          </div>
+          <div class="deploy-feature">
+            <div class="deploy-dot"></div>
+            <div class="deploy-feature-text">
+              <h4>Population health analytics</h4>
+              <p>Aggregated, anonymized data across screening cohorts generates population-level disease prevalence insights for public health authorities.</p>
+            </div>
+          </div>
+          <div class="deploy-feature">
+            <div class="deploy-dot"></div>
+            <div class="deploy-feature-text">
+              <h4>Rapid deployment kit</h4>
+              <p>Self-contained screening station — device, cartridges, display, and connectivity — ships as a single deployable unit, operational in under 20 minutes.</p>
+            </div>
+          </div>
+        </div>
+        <div class="deploy-visual">
+          <div class="deploy-visual-label">Screening Scale</div>
+          <div class="deploy-stat-row">
+            <div>
+              <div class="stat-num" style="font-size:48px;">&lt;20 min</div>
+              <div class="stat-label">Station setup time</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROADMAP -->
+  <section class="timeline-section">
+    <div class="section-inner">
+      <span class="eyebrow fade-up">Roadmap</span>
+      <h2 class="fade-up" style="transition-delay:.08s;margin-bottom:0;">The path to<br/>global deployment</h2>
+      <div style="margin-top:64px;">
+        <div class="timeline fade-up" style="transition-delay:.14s;">
+          <div class="tl-item">
+            <div class="tl-dot"></div>
+            <div class="tl-phase">Phase 1</div>
+            <h4>Prototype &amp; Validation</h4>
+            <p>Build Gen-1 device prototype, establish biomarker library, and run initial clinical validation studies with academic hospital partners.</p>
+            <span class="tl-date">2026 — Current</span>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot" style="background:var(--border-mid);box-shadow:0 0 0 2px var(--border-mid);"></div>
+            <div class="tl-phase" style="color:var(--muted);">Phase 2</div>
+            <h4 style="color:var(--muted);">Regulatory &amp; Pilot</h4>
+            <p>Submit for FDA Breakthrough Device designation and CE Mark. Run 500-patient clinical pilot across 3 hospital sites.</p>
+            <span class="tl-date" style="background:var(--bg2);color:var(--muted);">2027</span>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot" style="background:var(--border-mid);box-shadow:0 0 0 2px var(--border-mid);"></div>
+            <div class="tl-phase" style="color:var(--muted);">Phase 3</div>
+            <h4 style="color:var(--muted);">Commercial Launch</h4>
+            <p>Launch Respra device and clinical platform to early hospital and GP clinic partners. Begin home monitoring beta program.</p>
+            <span class="tl-date" style="background:var(--bg2);color:var(--muted);">2028</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ECONOMICS -->
+  <section class="econ-section" style="padding:120px 0;">
+    <div class="section-inner">
+      <div class="econ-grid">
+        <div>
+          <span class="eyebrow fade-up" style="color:var(--green-dark);">Unit Economics</span>
+          <h2 class="fade-up" style="transition-delay:.08s;color:var(--ink);">Designed to be<br/>affordable at scale.</h2>
+          <div class="rule-green fade-up" style="transition-delay:.14s;"></div>
+          <p class="lead fade-up" style="transition-delay:.18s;color:var(--green-dark);font-size:17px;">Respra is built on tiered pricing, recurring per-test fees, and a long-term commitment to at-cost deployment where disease burden is highest.</p>
+        </div>
+        <div class="econ-stats fade-up" style="transition-delay:.16s;">
+          <div class="econ-stat">
+            <div class="stat-num" style="font-size:44px;color:var(--green-dark);">$1000</div>
+            <div class="stat-label" style="color:var(--ink-mid);">Target device price at scale</div>
+          </div>
+          <div class="econ-stat">
+            <div class="stat-num" style="font-size:44px;color:var(--green-dark);">$15–40</div>
+            <div class="stat-label" style="color:var(--ink-mid);">Per-test software fee</div>
+          </div>
+          <div class="econ-stat">
+            <div class="stat-num" style="font-size:44px;color:var(--green-dark);">$200</div>
+            <div class="stat-label" style="color:var(--ink-mid);">Target unit cost at 1,000+ scale</div>
+          </div>
+          <div class="econ-stat">
+            <div class="stat-num" style="font-size:44px;color:var(--green-dark);">$2.8–4.2M</div>
+            <div class="stat-label" style="color:var(--ink-mid);">Estimated 24-month budget (majority non-dilutive)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div>
+      <div class="foot-brand">respra</div>
+      <div style="margin-top:8px;">© 2025 Respra, Inc. — <em>know in a breath.</em></div>
+    </div>
+    <div class="foot-links">
+      <a href="index.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="technology.html">Technology</a>
+      <a href="manifesto.html">Manifesto</a>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.fade-up').forEach(el => io.observe(el));
+
+  window.addEventListener('scroll', () => {
+    const bg = document.getElementById('impl-hero-bg');
+    if (bg) bg.style.transform = `translateY(${window.scrollY * 0.12}px)`;
+  }, { passive: true });
+
+  // Tab switching
+  document.querySelectorAll('.deploy-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.deploy-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.deploy-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+    });
+  });
+
+  const contactBtn = document.getElementById('contact-btn');
+  const contactPopup = document.getElementById('contact-popup');
+  if (contactBtn && contactPopup) {
+    contactBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      contactPopup.classList.toggle('open');
+    });
+    document.addEventListener('click', function() {
+      contactPopup.classList.remove('open');
+    });
+  }
+</script>
+
+</body>
+</html>
